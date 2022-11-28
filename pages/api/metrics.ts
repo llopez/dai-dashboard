@@ -29,10 +29,14 @@ const request = async (query: string) => {
   return result;
 };
 
-const fetchMetrics = async (): Promise<DailyMetric[]> => {
+const fetchMetrics = async (range: string): Promise<DailyMetric[]> => {
+  const currentTimestamp = Math.round(new Date().getTime() / 1000);
+
+  const r = currentTimestamp - 60 * 60 * 24 * parseInt(range);
+
   const query = `
     {
-      dailyMetrics(first: 90, orderDirection: asc, orderBy: id) {
+      dailyMetrics(first: ${range}, where: {blockTimestamp_gt: ${r}}) {
         totalSupply
         blockTimestamp
       }
@@ -62,7 +66,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<FormattedMetric[]>
 ) {
-  const dailyMetrics = await fetchMetrics();
+  const range = req.query.range as string;
+
+  const dailyMetrics = await fetchMetrics(range);
 
   const formattedMetrics = formatResponse(dailyMetrics);
 
